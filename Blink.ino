@@ -88,7 +88,8 @@ String writeData(String queue, String id) {
   http.addHeader("X-Parse-Application-Id", APP_ID);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("X-Parse-Session-Token", sessionToken);
-  String data = "{\"queue\": \"" + queue + "\", \"started\": " + (started ? "true" : "false") + ", \"owner\": \"" + userId + "\"}";
+  String data = "{\"queue\": \"" + queue + "\", \"started\": " + (started ? "true" : "false") + ", \"ACL\": {\"" + userId + "\": {\"read\": true, \"write\": true}, \"*\": {}}}";
+  Serial.println(data);
   if (id == "") {
     http.POST(data);
     String out = http.getString();
