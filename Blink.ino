@@ -29,6 +29,7 @@ bool started = false;
 String id = "";
 String sessionToken = "";
 String userId = "";
+String deviceName = "";
 
 void setup() {
 
@@ -40,6 +41,7 @@ void setup() {
 
   String def = get_name();
   def.trim();
+  deviceName = get_device();
   runWifi(def);
   sessionToken = def;
   while (WiFi.status() != WL_CONNECTED) {
@@ -61,7 +63,7 @@ void setup() {
   }
 
 
-  id = writeData("", "");
+  id = get_id();
   Serial.println(id);
 }
 
@@ -71,38 +73,63 @@ int getVal() {
   return total1;
 }
 
-String writeData(String queue, String id) {
+String writeData(String queue, String i) {
   HTTPClient http;
-  if (queue == prev_sent && id != "") {
-    return id;
+  if (queue == prev_sent && i != "") {
+    return i;
   } else {
     prev_sent = queue;
   }
-  if (id == "") {
+  if (i == "") {
     http.begin(URL + "/parse/classes/Queue");
   } else {
-    http.begin(URL + "/parse/classes/Queue/" + id);
+    http.begin(URL + "/parse/classes/Queue/" + i);
   }
   if (sessionToken == "")
-    return id;
+    return i;
   http.addHeader("X-Parse-Application-Id", APP_ID);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("X-Parse-Session-Token", sessionToken);
-  String data = "{\"queue\": \"" + queue + "\", \"started\": " + (started ? "true" : "false") + ", \"ACL\": {\"" + userId + "\": {\"read\": true, \"write\": true}, \"*\": {}}}";
-  Serial.println(data);
-  if (id == "") {
+  String data = "{\"deviceName\": \"" + deviceName + "\", \"queue\": \"" + queue + "\", \"started\": " + (started ? "true" : "false") + ", \"ACL\": {\"" + userId + "\": {\"read\": true, \"write\": true}, \"*\": {}}}";
+  if (i == "") {
     http.POST(data);
     String out = http.getString();
-    Serial.println(out);
     http.end();
     aJsonObject* jsonObject = aJson.parse(const_cast<char*> (out.c_str()));
     aJsonObject* objId = aJson.getObjectItem(jsonObject, "objectId");
+    id = objId->valuestring;
     return objId->valuestring;
   } else {
     http.sendRequest("PUT", data);
     String out = http.getString();
     http.end();
-    return id;
+    if (strstr(out.c_str(), "\"error\"") != NULL) {
+      Serial.println(out);
+      id = get_id();
+      return id;
+    }
+    return i;
+  }
+}
+
+String get_id() {
+  HTTPClient http;
+  http.begin(URL + "/parse/classes/Queue");
+  http.addHeader("X-Parse-Application-Id", APP_ID);
+  http.addHeader("X-Parse-Session-Token", sessionToken);
+  http.sendRequest("GET", "where={\"deviceName\": \"Blinky\"}");
+  String out = http.getString();
+  //  if (!out) {
+  //    return "";
+  //  }
+  aJsonObject* jsonObject = aJson.parse(const_cast<char*> (out.c_str()));
+  aJsonObject* objId = aJson.getObjectItem(jsonObject, "results");
+  Serial.println(out);
+  if (aJson.getArraySize(objId) != 0) {
+    aJsonObject* result = aJson.getArrayItem(objId, 0);
+    return aJson.getObjectItem(result, "objectId")->valuestring;
+  } else {
+    return "";
   }
 }
 
@@ -168,6 +195,22 @@ void write_name(String hostname) {
   f.println(hostname);
 }
 
+String get_device() {
+  File f = SPIFFS.open("/device.txt", "r");
+  if (!f) {
+    return "Blinky";
+  } else {
+    String out = f.readString();
+    out.trim();
+    return out;
+  }
+}
+
+void write_device(String hostname) {
+  File f = SPIFFS.open("/device.txt", "w");
+  f.println(hostname);
+}
+
 String authenticate(String username, String password) {
   HTTPClient http;
   http.begin(URL + "/parse/login?username=" + urlencode(username) + "&password=" + urlencode(password));
@@ -194,14 +237,17 @@ void runWifi(String def) {
   def.toCharArray(defa, 24);
   WiFiManagerParameter username("username", "Username (if no account, create one in the app", "", 24);
   WiFiManagerParameter password("password", "Password", "", 24);
+  WiFiManagerParameter device("device", "Device Name", "Blinky", 24);
   WiFiManager wifiManager;
   wifiManager.addParameter(&username);
   wifiManager.addParameter(&password);
+  wifiManager.addParameter(&device);
   wifiManager.setAPCallback(setconfed);
   wifiManager.autoConnect("Blink Device");
   if (confed) {
     sessionToken = authenticate(username.getValue(), password.getValue());
     write_name(sessionToken);
+    write_device(device.getValue());
     ESP.reset();
   }
 }
