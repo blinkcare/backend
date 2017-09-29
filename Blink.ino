@@ -162,9 +162,10 @@ void loop()
   }
   if (new_char < change) {
     if (started == true) {
-      if (!queue.endsWith("|") && !queue.endsWith(" ") && queue.length() != 0)
+      if (!queue.endsWith("|") && !queue.endsWith(" ") && queue.length() != 0) {
         queue += "|";
         writeData(queue, id);
+      }
     }
   }
   if (value > threshold) {
