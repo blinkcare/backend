@@ -8,6 +8,7 @@
 #include "FS.h"
 #include <CapacitiveSensor.h>
 #include <aJSON.h>
+//#include "HTTP_Async/ESP8266.h"
 
 const String URL = "http://192.168.100.113:1337";
 const String APP_ID = "APPLICATION_ID";
@@ -56,11 +57,12 @@ void setup() {
 
   if (http.GET()) {
     String out = http.getString();
-    Serial.println(sessionToken);
+    Serial.println(out);
     aJsonObject* jsonObject = aJson.parse(const_cast<char*> (out.c_str()));
     aJsonObject* objId = aJson.getObjectItem(jsonObject, "objectId");
     userId = objId->valuestring;
   }
+  http.end();
 
 
   id = get_id();
@@ -74,6 +76,7 @@ int getVal() {
 }
 
 String writeData(String queue, String i) {
+  Serial.println("Starting sending");
   HTTPClient http;
   if (queue == prev_sent && i != "") {
     return i;
@@ -101,6 +104,7 @@ String writeData(String queue, String i) {
     return objId->valuestring;
   } else {
     http.sendRequest("PUT", data);
+    Serial.println("Sending");
     String out = http.getString();
     http.end();
     if (strstr(out.c_str(), "\"error\"") != NULL) {
@@ -119,6 +123,7 @@ String get_id() {
   http.addHeader("X-Parse-Session-Token", sessionToken);
   http.sendRequest("GET", "where={\"deviceName\": \"Blinky\"}");
   String out = http.getString();
+  http.end();
   //  if (!out) {
   //    return "";
   //  }
@@ -149,6 +154,7 @@ void loop()
   start_millis = millis();
   while (value < threshold) {
     value = getVal();
+    Serial.println(value);
     change = millis() - start_millis;
     if (new_char < change) {
       break;
@@ -158,6 +164,7 @@ void loop()
     if (started == true) {
       if (!queue.endsWith("|") && !queue.endsWith(" ") && queue.length() != 0)
         queue += "|";
+        writeData(queue, id);
     }
   }
   if (value > threshold) {
@@ -173,9 +180,9 @@ void loop()
     } else if (change > reset) {
       queue = "";
     }
+    writeData(queue, id);
   }
   Serial.println(queue);
-  writeData(queue, id);
 }
 
 
@@ -218,6 +225,7 @@ String authenticate(String username, String password) {
   http.addHeader("Content-Type", "application/json");
   int code = http.GET();
   String out = http.getString();
+  http.end();
   Serial.println(out);
   if (code == 200) {
     aJsonObject* jsonObject = aJson.parse(const_cast<char*> (out.c_str()));
