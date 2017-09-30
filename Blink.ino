@@ -10,11 +10,12 @@
 #include <aJSON.h>
 //#include "HTTP_Async/ESP8266.h"
 
-const String URL = "http://192.168.100.113:1337";
+const String URL = "http://blinkserver.us-east-1.elasticbeanstalk.com/";
 const String APP_ID = "APPLICATION_ID";
 
 bool confed = false;
 CapacitiveSensor   cs_4_2 = CapacitiveSensor(14, 12);
+const int resetPin = 16;
 
 int threshold = 100;
 int long_press = 350;
@@ -39,11 +40,19 @@ void setup() {
 
   Serial.begin(115200);
   SPIFFS.begin();
-
-  String def = get_name();
-  def.trim();
+  pinMode(resetPin, INPUT);
+  String def;
+  Serial.println(digitalRead(resetPin));
+  if ( digitalRead(resetPin) == HIGH) {
+    def = get_name();
+    def.trim();
+    runWifi(def, false);
+  } else  {
+    def = get_name();
+    def.trim();
+    runWifi(def, true);
+  }
   deviceName = get_device();
-  runWifi(def);
   sessionToken = def;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -58,9 +67,13 @@ void setup() {
   if (http.GET()) {
     String out = http.getString();
     Serial.println(out);
-    aJsonObject* jsonObject = aJson.parse(const_cast<char*> (out.c_str()));
-    aJsonObject* objId = aJson.getObjectItem(jsonObject, "objectId");
-    userId = objId->valuestring;
+    if (strstr(out.c_str(), "invalid session token") != NULL) {
+      runWifi(def, false);
+    } else {
+      aJsonObject* jsonObject = aJson.parse(const_cast<char*> (out.c_str()));
+      aJsonObject* objId = aJson.getObjectItem(jsonObject, "objectId");
+      userId = objId->valuestring;
+    }
   }
   http.end();
 
@@ -140,6 +153,13 @@ String get_id() {
 
 void loop()
 {
+
+  if ( digitalRead(resetPin) == HIGH) {
+      String def = get_name();
+      def.trim();
+      runWifi(def, false);
+  }
+  
   int value;
   long change, start_millis;
   if (strstr(queue.c_str(), "..--") != NULL) {
@@ -241,7 +261,7 @@ void setconfed(WiFiManager *myWiFiManager) {
   confed = true;
 }
 
-void runWifi(String def) {
+void runWifi(String def, bool aut) {
   char defa[24];
   def.toCharArray(defa, 24);
   WiFiManagerParameter username("username", "Username (if no account, create one in the app", "", 24);
@@ -252,7 +272,11 @@ void runWifi(String def) {
   wifiManager.addParameter(&password);
   wifiManager.addParameter(&device);
   wifiManager.setAPCallback(setconfed);
-  wifiManager.autoConnect("Blink Device");
+  if (aut) {
+    wifiManager.autoConnect("Blink Device");
+  } else {
+    wifiManager.startConfigPortal("Blink Device");
+  }
   if (confed) {
     sessionToken = authenticate(username.getValue(), password.getValue());
     write_name(sessionToken);
