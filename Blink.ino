@@ -264,7 +264,7 @@ void setconfed(WiFiManager *myWiFiManager) {
 void runWifi(String def, bool aut) {
   char defa[24];
   def.toCharArray(defa, 24);
-  WiFiManagerParameter username("username", "Username (if no account, create one in the app", "", 24);
+  WiFiManagerParameter username("username", "Email (if no account, create one in the app)", "", 24);
   WiFiManagerParameter password("password", "Password", "", 24);
   WiFiManagerParameter device("device", "Device Name", "Blinky", 24);
   WiFiManager wifiManager;
@@ -281,7 +281,7 @@ void runWifi(String def, bool aut) {
     sessionToken = authenticate(username.getValue(), password.getValue());
     write_name(sessionToken);
     write_device(device.getValue());
-    ESP.reset();
+    ESP.restart();
   }
 }
 
