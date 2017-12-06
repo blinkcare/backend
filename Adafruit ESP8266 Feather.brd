@@ -168,7 +168,6 @@
 <wire x1="0" y1="8.89" x2="0" y2="2.54" width="0" layer="20"/>
 <wire x1="0" y1="2.54" x2="2.54" y2="0" width="0" layer="20" curve="90"/>
 <text x="21.971" y="20.066" size="1.016" layer="21" ratio="12" align="center">USB</text>
-<text x="6.35" y="2.921" size="1.016" layer="21" ratio="12" rot="R180" align="center">RST</text>
 <text x="11.43" y="2.794" size="1.016" layer="21" ratio="12" rot="R180" align="center">NC</text>
 <text x="9.017" y="2.794" size="1.016" layer="21" ratio="12" rot="R180" align="center">3V</text>
 <text x="19.304" y="3.048" size="0.8128" layer="21" ratio="12" rot="R270" align="center">NC</text>
@@ -243,6 +242,9 @@ ESP8266 WiFi</text>
 <dimension x1="0" y1="6.731" x2="25.4" y2="1.27" x3="12.7" y3="-6.858" textsize="1.778" layer="47" dtype="horizontal" unit="inch"/>
 <dimension x1="0" y1="20.701" x2="30.48" y2="21.59" x3="15.24" y3="26.67" textsize="1.778" layer="47" dtype="horizontal" unit="inch"/>
 <dimension x1="0" y1="20.447" x2="10.795" y2="19.304" x3="5.3975" y3="23.622" textsize="1.778" layer="47" dtype="horizontal" unit="inch"/>
+<text x="6.858" y="2.667" size="1.016" layer="21" ratio="12" rot="R180" align="center">RST</text>
+<text x="2.413" y="9.779" size="1.778" layer="21">Blink
+Gustav Hansen</text>
 </plain>
 <libraries>
 <library name="microbuilder">
