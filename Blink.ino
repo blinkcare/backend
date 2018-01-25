@@ -10,7 +10,7 @@
 #include <aJSON.h>
 //#include "HTTP_Async/ESP8266.h"
 
-const String URL = "http://blinkserver.us-east-1.elasticbeanstalk.com";
+const String URL = "http://aws.blink.care";
 const String APP_ID = "APPLICATION_ID";
 
 bool confed = false;
